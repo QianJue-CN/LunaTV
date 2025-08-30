@@ -131,10 +131,10 @@ export async function GET() {
         description: '有效的邮箱地址',
       },
       password: {
-        minLength: 8,
+        minLength: 6,
         maxLength: 50,
         pattern: '^(?=.*[a-zA-Z])(?=.*\\d)',
-        description: '密码必须包含字母和数字',
+        description: '密码至少6个字符，必须包含字母和数字',
       },
     },
   });

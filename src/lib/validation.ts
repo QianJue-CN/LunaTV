@@ -29,30 +29,23 @@ export const emailSchema = z
     }
   );
 
-// 密码验证规则
+// 密码验证规则（降低要求）
 export const passwordSchema = z
   .string()
-  .min(8, '密码至少8个字符')
+  .min(6, '密码至少6个字符')  // 降低最小长度要求
   .max(50, '密码最多50个字符')
   .regex(/^(?=.*[a-zA-Z])(?=.*\d)/, '密码必须包含字母和数字')
   .refine(
     (val) => {
-      // 检查密码强度
-      const hasLowerCase = /[a-z]/.test(val);
-      const hasUpperCase = /[A-Z]/.test(val);
-      const hasNumbers = /\d/.test(val);
-      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+      // 使用更宽松的密码强度检查
+      const hasLetter = /[a-zA-Z]/.test(val);
+      const hasNumber = /\d/.test(val);
+      const isNotTooSimple = !/^(123456|password|admin)$/i.test(val);
 
-      let strength = 0;
-      if (hasLowerCase) strength++;
-      if (hasUpperCase) strength++;
-      if (hasNumbers) strength++;
-      if (hasSpecialChar) strength++;
-
-      return strength >= 2; // 至少包含2种类型的字符
+      return hasLetter && hasNumber && isNotTooSimple;
     },
     {
-      message: '密码强度不足，建议包含大小写字母、数字或特殊字符',
+      message: '密码需要包含字母和数字，不能是常见的简单密码',
     }
   );
 
@@ -84,48 +77,52 @@ export function checkPasswordStrength(password: string): {
   const feedback: string[] = [];
   let score = 0;
 
+  // 基本长度要求
   if (password.length < 8) {
     feedback.push('密码长度至少8个字符');
   } else {
-    score += 1;
+    score += 2; // 长度符合要求给更高分
   }
 
-  if (!/[a-z]/.test(password)) {
-    feedback.push('包含小写字母');
+  // 检查是否包含字母（大小写都算）
+  const hasLetter = /[a-zA-Z]/.test(password);
+  if (!hasLetter) {
+    feedback.push('包含字母');
   } else {
-    score += 1;
+    score += 2; // 包含字母是基本要求
   }
 
-  if (!/[A-Z]/.test(password)) {
-    feedback.push('包含大写字母');
-  } else {
-    score += 1;
-  }
-
+  // 检查是否包含数字
   if (!/\d/.test(password)) {
     feedback.push('包含数字');
   } else {
-    score += 1;
+    score += 2; // 包含数字是基本要求
   }
 
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    feedback.push('包含特殊字符');
-  } else {
-    score += 1;
+  // 以下是加分项，不是必需的
+  if (/[a-z]/.test(password)) {
+    score += 1; // 包含小写字母加分
   }
 
-  // 检查常见弱密码模式
+  if (/[A-Z]/.test(password)) {
+    score += 1; // 包含大写字母加分
+  }
+
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    score += 1; // 包含特殊字符加分
+  }
+
+  // 检查极其简单的弱密码模式（更宽松的检查）
   const commonPatterns = [
-    /123456/,
-    /password/i,
-    /qwerty/i,
-    /abc123/i,
-    /admin/i,
+    /^123456$/,       // 完全是123456
+    /^password$/i,    // 完全是password
+    /^admin$/i,       // 完全是admin
+    /^(.)\1{7,}$/,    // 8个或以上相同字符
   ];
 
   if (commonPatterns.some((pattern) => pattern.test(password))) {
-    feedback.push('避免使用常见密码模式');
-    score = Math.max(0, score - 2);
+    feedback.push('避免使用过于简单的密码');
+    score = Math.max(0, score - 1);
   }
 
   // 检查重复字符
@@ -134,10 +131,14 @@ export function checkPasswordStrength(password: string): {
     score = Math.max(0, score - 1);
   }
 
+  // 大幅降低强度要求：只要包含字母+数字且长度足够就算强密码
+  const hasBasicRequirements = password.length >= 8 && hasLetter && /\d/.test(password);
+  const hasSimplePattern = commonPatterns.some((pattern) => pattern.test(password));
+
   return {
     score,
     feedback,
-    isStrong: score >= 3 && feedback.length <= 2,
+    isStrong: hasBasicRequirements && !hasSimplePattern,
   };
 }
 
@@ -266,28 +267,17 @@ export function validateSecurityRequirements(data: {
 } {
   const warnings: string[] = [];
 
-  // 检查用户名和密码是否过于相似
-  if (data.password.toLowerCase().includes(data.username.toLowerCase())) {
-    warnings.push('密码不应包含用户名');
+  // 只检查密码是否与用户名完全相同（大小写不敏感）
+  if (data.password.toLowerCase() === data.username.toLowerCase()) {
+    warnings.push('密码不能与用户名相同');
   }
 
-  // 检查邮箱和密码是否过于相似
-  const emailLocal = data.email.split('@')[0];
-  if (data.password.toLowerCase().includes(emailLocal.toLowerCase())) {
-    warnings.push('密码不应包含邮箱前缀');
+  // 只检查密码是否与邮箱完全相同
+  if (data.password.toLowerCase() === data.email.toLowerCase()) {
+    warnings.push('密码不能与邮箱相同');
   }
 
-  // 检查密码是否包含个人信息
-  const personalInfo = [data.username, emailLocal, data.email.split('@')[1]];
-  for (const info of personalInfo) {
-    if (
-      info.length >= 3 &&
-      data.password.toLowerCase().includes(info.toLowerCase())
-    ) {
-      warnings.push('密码不应包含个人信息');
-      break;
-    }
-  }
+  // 移除了过于严格的个人信息检查
 
   return {
     isSecure: warnings.length === 0,

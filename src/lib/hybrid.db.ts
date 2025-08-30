@@ -1,7 +1,7 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 import { AdminConfig } from './admin.types';
-import { PostgresConnectionConfig,PostgresStorage } from './postgres.db';
+import { PostgresConnectionConfig, PostgresStorage } from './postgres.db';
 import { BaseRedisStorage, RedisConnectionConfig } from './redis-base.db';
 import { Favorite, IStorage, PlayRecord, SkipConfig, UserInfo } from './types';
 
@@ -130,6 +130,7 @@ export class HybridStorage implements IStorage {
 
     // 清除相关缓存
     await this.deleteFromCache(this.getCacheKey('user', userName));
+    await this.deleteFromCache(this.getCacheKey('user_exists', userName));
     await this.deleteFromCache(this.getCacheKey('users', 'all'));
   }
 
