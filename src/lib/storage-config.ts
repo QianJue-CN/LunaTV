@@ -34,7 +34,8 @@ function getStorageConfigs() {
   // PostgreSQL 配置
   const postgresConfig: PostgresConnectionConfig = {
     connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL || '',
-    ssl: process.env.NODE_ENV === 'production'
+    // 只有在明确设置了 POSTGRES_SSL=true 时才启用 SSL
+    ssl: process.env.POSTGRES_SSL === 'true'
   };
 
   // Redis 配置
