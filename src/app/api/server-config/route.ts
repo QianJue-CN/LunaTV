@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const config = await getConfig();
   const result = {
     SiteName: config.SiteConfig.SiteName,
-    StorageType: process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage',
+    StorageType: process.env.STORAGE_TYPE || process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage',
     Version: CURRENT_VERSION,
   };
   return NextResponse.json(result);

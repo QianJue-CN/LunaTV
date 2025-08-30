@@ -13,6 +13,14 @@ export const runtime = 'nodejs';
 
 // 读取存储类型环境变量，默认 localstorage
 const STORAGE_TYPE =
+  (process.env.STORAGE_TYPE as
+    | 'localstorage'
+    | 'redis'
+    | 'upstash'
+    | 'kvrocks'
+    | 'postgres'
+    | 'hybrid'
+    | undefined) ||
   (process.env.NEXT_PUBLIC_STORAGE_TYPE as
     | 'localstorage'
     | 'redis'
