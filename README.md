@@ -89,7 +89,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - USERNAME=admin
+      - LUNATV_USERNAME=admin  # 推荐使用，避免环境变量冲突
       - PASSWORD=admin_password
       - STORAGE_TYPE=hybrid
       - DATABASE_URL=postgresql://moontv:password@moontv-postgres:5432/moontv
@@ -145,7 +145,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - USERNAME=admin
+      - LUNATV_USERNAME=admin  # 推荐使用，避免环境变量冲突
       - PASSWORD=admin_password
       - STORAGE_TYPE=postgres
       - DATABASE_URL=postgresql://moontv:password@moontv-postgres:5432/moontv
@@ -186,7 +186,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - USERNAME=admin
+      - LUNATV_USERNAME=admin  # 推荐使用，避免环境变量冲突
       - PASSWORD=admin_password
       - NEXT_PUBLIC_STORAGE_TYPE=kvrocks
       - KVROCKS_URL=redis://moontv-kvrocks:6666
@@ -220,7 +220,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - USERNAME=admin
+      - LUNATV_USERNAME=admin  # 推荐使用，避免环境变量冲突
       - PASSWORD=admin_password
       - NEXT_PUBLIC_STORAGE_TYPE=redis
       - REDIS_URL=redis://moontv-redis:6379
@@ -257,7 +257,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - USERNAME=admin
+      - LUNATV_USERNAME=admin  # 推荐使用，避免环境变量冲突
       - PASSWORD=admin_password
       - NEXT_PUBLIC_STORAGE_TYPE=upstash
       - UPSTASH_URL=上面 https 开头的 HTTPS ENDPOINT
@@ -319,9 +319,28 @@ dockge/komodo 等 docker compose UI 也有自动更新功能
 
 ## 环境变量
 
+### 重要说明
+
+#### 用户注册密码要求
+- **密码长度**：最少6个字符（已降低要求）
+- **密码组成**：必须包含字母和数字
+- **限制条件**：不能与用户名或邮箱完全相同，不能是常见的简单密码（如"123456"、"password"等）
+
+#### 环境变量冲突解决
+在Windows系统或某些Docker环境中，`USERNAME` 环境变量可能与系统变量冲突。如果遇到站长登录问题，请使用 `LUNATV_USERNAME` 替代：
+
+```yml
+environment:
+  - LUNATV_USERNAME=admin  # 推荐在Docker中使用
+  - PASSWORD=your_password
+```
+
+系统会优先使用 `LUNATV_USERNAME`，如果未设置则回退到 `USERNAME`。
+
 | 变量                                | 说明                     | 可选值                                    | 默认值                                                                                                                     |
 | ----------------------------------- | ------------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | USERNAME                            | 站长账号                 | 任意字符串                                | 无默认，必填字段                                                                                                           |
+| LUNATV_USERNAME                     | 站长账号（Docker推荐）   | 任意字符串                                | 无默认，可选（避免Windows系统USERNAME环境变量冲突）                                                                        |
 | PASSWORD                            | 站长密码                 | 任意字符串                                | 无默认，必填字段                                                                                                           |
 | SITE_BASE                           | 站点 url                 | 形如 https://example.com                  | 空                                                                                                                         |
 | NEXT_PUBLIC_SITE_NAME               | 站点名称                 | 任意字符串                                | MoonTV                                                                                                                     |
@@ -394,6 +413,50 @@ NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE 选项解释：
 目前该项目可以配合 [OrionTV](https://github.com/zimplexing/OrionTV) 在 Android TV 上使用，可以直接作为 OrionTV 后端
 
 已实现播放记录和网页端同步
+
+## 常见问题
+
+### 站长无法登录管理面板
+
+**问题描述**：在混合模式下，站长登录后无法访问管理面板，被重定向到登录页面。
+
+**解决方案**：这通常是由于环境变量冲突导致的，特别是在Windows系统或某些Docker环境中。
+
+1. **使用 LUNATV_USERNAME 环境变量**（推荐）：
+   ```yml
+   environment:
+     - LUNATV_USERNAME=admin  # 替代 USERNAME
+     - PASSWORD=your_password
+   ```
+
+2. **或者在Docker中明确设置**：
+   ```yml
+   environment:
+     - USERNAME=admin
+     - PASSWORD=your_password
+   ```
+
+### 用户注册密码要求过严
+
+**问题描述**：用户注册时提示"密码不应包含个人信息"或密码强度不足。
+
+**解决方案**：系统已降低密码要求，现在只需要：
+- 至少6个字符
+- 包含字母和数字
+- 不与用户名或邮箱完全相同
+- 不是极其简单的密码（如"123456"、"password"等）
+
+### Docker部署登录页面只显示密码输入框
+
+**问题描述**：在Docker部署的混合模式下，登录页面只显示访问密码输入框，没有用户名输入框。
+
+**解决方案**：确保正确设置存储类型环境变量：
+```yml
+environment:
+  - STORAGE_TYPE=hybrid  # 使用新的环境变量名
+  - LUNATV_USERNAME=admin
+  - PASSWORD=your_password
+```
 
 ## 安全与隐私提醒
 

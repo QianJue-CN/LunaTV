@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { getAdminUsername, getAdminPassword } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -142,9 +143,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 可能是站长，直接读环境变量
+    const adminUsername = getAdminUsername();
+    const adminPassword = getAdminPassword();
+
     if (
-      username === process.env.USERNAME &&
-      password === process.env.PASSWORD
+      username === adminUsername &&
+      password === adminPassword
     ) {
       // 验证成功，设置认证cookie
       const response = NextResponse.json({ ok: true });
@@ -166,7 +170,7 @@ export async function POST(req: NextRequest) {
       });
 
       return response;
-    } else if (username === process.env.USERNAME) {
+    } else if (username === adminUsername) {
       return NextResponse.json({ error: '用户名或密码错误' }, { status: 401 });
     }
 

@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AdminConfigResult } from '@/lib/admin.types';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getConfig } from '@/lib/config';
+import { getAdminUsername } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       Role: 'owner',
       Config: config,
     };
-    if (username === process.env.USERNAME) {
+    if (username === getAdminUsername()) {
       result.Role = 'owner';
     } else {
       const user = config.UserConfig.Users.find((u) => u.username === username);

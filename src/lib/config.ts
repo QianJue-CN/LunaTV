@@ -3,6 +3,7 @@
 import { db } from '@/lib/db';
 
 import { AdminConfig } from './admin.types';
+import { getAdminUsername } from './env';
 
 export interface ApiSite {
   key: string;
@@ -188,10 +189,10 @@ async function getInitConfig(
     AutoUpdate: boolean;
     LastCheck: string;
   } = {
-    URL: '',
-    AutoUpdate: false,
-    LastCheck: '',
-  }
+      URL: '',
+      AutoUpdate: false,
+      LastCheck: '',
+    }
 ): Promise<AdminConfig> {
   let cfgFile: ConfigFileStruct;
   try {
@@ -237,15 +238,16 @@ async function getInitConfig(
   } catch (e) {
     console.error('获取用户列表失败:', e);
   }
+  const adminUsername = getAdminUsername();
   const allUsers = userNames
-    .filter((u) => u !== process.env.USERNAME)
+    .filter((u) => u !== adminUsername)
     .map((u) => ({
       username: u,
       role: 'user',
       banned: false,
     }));
   allUsers.unshift({
-    username: process.env.USERNAME!,
+    username: adminUsername!,
     role: 'owner',
     banned: false,
   });
@@ -346,7 +348,7 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
   }
 
   // 站长变更自检
-  const ownerUser = process.env.USERNAME;
+  const ownerUser = getAdminUsername();
 
   // 去重
   const seenUsernames = new Set<string>();
