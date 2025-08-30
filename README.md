@@ -23,7 +23,7 @@
 - 🔍 **多源聚合搜索**：一次搜索立刻返回全源结果。
 - 📄 **丰富详情页**：支持剧集列表、演员、年份、简介等完整信息展示。
 - ▶️ **流畅在线播放**：集成 HLS.js & ArtPlayer。
-- ❤️ **收藏 + 继续观看**：支持 Kvrocks/Redis/Upstash 存储，多端同步进度。
+- ❤️ **收藏 + 继续观看**：支持 PostgreSQL/Redis/Upstash 混合存储，多端同步进度。
 - 📱 **PWA**：离线缓存、安装到桌面/主屏，移动端原生体验。
 - 🌗 **响应式布局**：桌面侧边栏 + 移动底部导航，自适应各种屏幕尺寸。
 - 👿 **智能去广告**：自动跳过视频中的切片广告（实验性）。
@@ -67,7 +67,115 @@
 
 本项目**仅支持 Docker 或其他基于 Docker 的平台** 部署。
 
-### Kvrocks 存储（推荐）
+## 存储系统
+
+LunaTV 支持多种存储方案，可根据需求选择：
+
+- **混合存储（推荐）**：PostgreSQL + Redis，最佳性能和可靠性
+- **PostgreSQL 存储**：仅使用数据库，适合简单部署
+- **Upstash 存储**：云服务，免运维
+- **Redis 存储**：仅缓存，有数据丢失风险
+
+### 混合存储（推荐）
+
+结合 PostgreSQL 和 Redis 的优势，提供最佳的性能和数据安全性：
+
+```yml
+services:
+  moontv-core:
+    image: ghcr.io/moontechlab/lunatv:latest
+    container_name: moontv-core
+    restart: on-failure
+    ports:
+      - '3000:3000'
+    environment:
+      - USERNAME=admin
+      - PASSWORD=admin_password
+      - STORAGE_TYPE=hybrid
+      - DATABASE_URL=postgresql://moontv:password@moontv-postgres:5432/moontv
+      - REDIS_URL=redis://:redis_password@moontv-redis:6379
+    networks:
+      - moontv-network
+    depends_on:
+      - moontv-postgres
+      - moontv-redis
+
+  moontv-postgres:
+    image: postgres:15-alpine
+    container_name: moontv-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=moontv
+      - POSTGRES_USER=moontv
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - moontv-network
+
+  moontv-redis:
+    image: redis:alpine
+    container_name: moontv-redis
+    restart: unless-stopped
+    command: redis-server --requirepass redis_password
+    volumes:
+      - redis-data:/data
+    networks:
+      - moontv-network
+
+networks:
+  moontv-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+```
+
+### PostgreSQL 存储
+
+仅使用 PostgreSQL 数据库，适合简单部署：
+
+```yml
+services:
+  moontv-core:
+    image: ghcr.io/moontechlab/lunatv:latest
+    container_name: moontv-core
+    restart: on-failure
+    ports:
+      - '3000:3000'
+    environment:
+      - USERNAME=admin
+      - PASSWORD=admin_password
+      - STORAGE_TYPE=postgres
+      - DATABASE_URL=postgresql://moontv:password@moontv-postgres:5432/moontv
+    networks:
+      - moontv-network
+    depends_on:
+      - moontv-postgres
+
+  moontv-postgres:
+    image: postgres:15-alpine
+    container_name: moontv-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=moontv
+      - POSTGRES_USER=moontv
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - moontv-network
+
+networks:
+  moontv-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+```
+
+### Kvrocks 存储（兼容性保持）
 
 ```yml
 services:
@@ -211,25 +319,58 @@ dockge/komodo 等 docker compose UI 也有自动更新功能
 
 ## 环境变量
 
-| 变量                                | 说明                     | 可选值                   | 默认值                                                                                                                     |
-| ----------------------------------- | ------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| USERNAME                            | 站长账号                 | 任意字符串               | 无默认，必填字段                                                                                                           |
-| PASSWORD                            | 站长密码                 | 任意字符串               | 无默认，必填字段                                                                                                           |
-| SITE_BASE                           | 站点 url                 | 形如 https://example.com | 空                                                                                                                         |
-| NEXT_PUBLIC_SITE_NAME               | 站点名称                 | 任意字符串               | MoonTV                                                                                                                     |
-| ANNOUNCEMENT                        | 站点公告                 | 任意字符串               | 本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。 |
-| NEXT_PUBLIC_STORAGE_TYPE            | 播放记录/收藏的存储方式  | redis、kvrocks、upstash  | 无默认，必填字段                                                                                                           |
-| KVROCKS_URL                         | kvrocks 连接 url         | 连接 url                 | 空                                                                                                                         |
-| REDIS_URL                           | redis 连接 url           | 连接 url                 | 空                                                                                                                         |
-| UPSTASH_URL                         | upstash redis 连接 url   | 连接 url                 | 空                                                                                                                         |
-| UPSTASH_TOKEN                       | upstash redis 连接 token | 连接 token               | 空                                                                                                                         |
+| 变量                                | 说明                     | 可选值                                    | 默认值                                                                                                                     |
+| ----------------------------------- | ------------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| USERNAME                            | 站长账号                 | 任意字符串                                | 无默认，必填字段                                                                                                           |
+| PASSWORD                            | 站长密码                 | 任意字符串                                | 无默认，必填字段                                                                                                           |
+| SITE_BASE                           | 站点 url                 | 形如 https://example.com                  | 空                                                                                                                         |
+| NEXT_PUBLIC_SITE_NAME               | 站点名称                 | 任意字符串                                | MoonTV                                                                                                                     |
+| ANNOUNCEMENT                        | 站点公告                 | 任意字符串                                | 本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。 |
+| **存储系统配置**                    |                          |                                           |                                                                                                                            |
+| STORAGE_TYPE                        | 存储类型                 | hybrid、postgres、redis、upstash、kvrocks | 无默认，必填字段                                                                                                           |
+| DATABASE_URL                        | PostgreSQL 数据库连接    | postgresql://user:pass@host:port/db       | 空（hybrid/postgres 模式必填）                                                                                             |
+| REDIS_URL                           | Redis 连接 url           | redis://[user:pass@]host:port[/db]        | 空（hybrid/redis 模式必填）                                                                                                |
+| UPSTASH_URL                         | Upstash Redis 连接 url   | https://...                               | 空（upstash 模式必填）                                                                                                     |
+| UPSTASH_TOKEN                       | Upstash Redis token      | 连接 token                                | 空（upstash 模式必填）                                                                                                     |
+| KVROCKS_URL                         | Kvrocks 连接 url         | redis://host:port                         | 空（kvrocks 模式必填）                                                                                                     |
 | NEXT_PUBLIC_SEARCH_MAX_PAGE         | 搜索接口可拉取的最大页数 | 1-50                     | 5                                                                                                                          |
 | NEXT_PUBLIC_DOUBAN_PROXY_TYPE       | 豆瓣数据源请求方式       | 见下方                   | direct                                                                                                                     |
 | NEXT_PUBLIC_DOUBAN_PROXY            | 自定义豆瓣数据代理 URL   | url prefix               | (空)                                                                                                                       |
 | NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE | 豆瓣图片代理类型         | 见下方                   | direct                                                                                                                     |
 | NEXT_PUBLIC_DOUBAN_IMAGE_PROXY      | 自定义豆瓣图片代理 URL   | url prefix               | (空)                                                                                                                       |
 | NEXT_PUBLIC_DISABLE_YELLOW_FILTER   | 关闭色情内容过滤         | true/false               | false                                                                                                                      |
-| NEXT_PUBLIC_FLUID_SEARCH            | 是否开启搜索接口流式输出 | true/ false              | true                                                                                                                       |
+| NEXT_PUBLIC_FLUID_SEARCH            | 是否开启搜索接口流式输出 | true/ false                           | true                                                                                                                       |
+
+### 存储类型说明
+
+**STORAGE_TYPE** 选项解释：
+
+- **hybrid**（推荐）：PostgreSQL + Redis 混合存储
+  - PostgreSQL：持久化数据（用户信息、配置、收藏夹等）
+  - Redis：缓存层 + 高频数据（播放记录、搜索历史等）
+  - 优势：最佳性能、数据安全、支持缓存
+  - 需要：`DATABASE_URL` + `REDIS_URL`
+
+- **postgres**：仅使用 PostgreSQL 数据库
+  - 适合：简单部署、数据安全要求高
+  - 优势：数据持久化、事务支持
+  - 需要：`DATABASE_URL`
+
+- **redis**：仅使用 Redis 缓存
+  - 适合：高性能要求、临时数据
+  - 风险：重启后数据可能丢失
+  - 需要：`REDIS_URL`
+
+- **upstash**：使用 Upstash 云服务
+  - 适合：免运维、云端部署
+  - 优势：托管服务、自动备份
+  - 需要：`UPSTASH_URL` + `UPSTASH_TOKEN`
+
+- **kvrocks**：兼容性保持
+  - 与 Redis 协议兼容
+  - 需要：`KVROCKS_URL`
+
+### 豆瓣代理配置
 
 NEXT_PUBLIC_DOUBAN_PROXY_TYPE 选项解释：
 
