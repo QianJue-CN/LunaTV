@@ -1,16 +1,16 @@
 import {
-  validateUsername,
-  validateEmail,
   checkPasswordStrength,
   registerFormSchema,
+  validateEmail,
   validateSecurityRequirements,
+  validateUsername,
 } from '@/lib/validation';
 
 describe('用户名验证', () => {
   test('有效用户名应该通过验证', () => {
     const validUsernames = ['user123', 'test_user', 'admin2024', 'user_123'];
 
-    validUsernames.forEach(username => {
+    validUsernames.forEach((username) => {
       const result = validateUsername(username);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -22,11 +22,17 @@ describe('用户名验证', () => {
       { username: '', expectedError: '用户名不能为空' },
       { username: 'ab', expectedError: '用户名至少3个字符' },
       { username: 'a'.repeat(21), expectedError: '用户名最多20个字符' },
-      { username: 'user-name', expectedError: '用户名只能包含字母、数字和下划线' },
+      {
+        username: 'user-name',
+        expectedError: '用户名只能包含字母、数字和下划线',
+      },
       { username: '_username', expectedError: '用户名不能以下划线开头或结尾' },
       { username: 'username_', expectedError: '用户名不能以下划线开头或结尾' },
       { username: 'user__name', expectedError: '用户名不能包含连续的下划线' },
-      { username: 'admin', expectedError: '该用户名为系统保留，请选择其他用户名' },
+      {
+        username: 'admin',
+        expectedError: '该用户名为系统保留，请选择其他用户名',
+      },
     ];
 
     invalidCases.forEach(({ username, expectedError }) => {
@@ -46,7 +52,7 @@ describe('邮箱验证', () => {
       'user123@test-domain.com',
     ];
 
-    validEmails.forEach(email => {
+    validEmails.forEach((email) => {
       const result = validateEmail(email);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -79,7 +85,7 @@ describe('密码强度检查', () => {
       'Complex#Pass1',
     ];
 
-    strongPasswords.forEach(password => {
+    strongPasswords.forEach((password) => {
       const result = checkPasswordStrength(password);
       expect(result.score).toBeGreaterThanOrEqual(4);
       expect(result.isStrong).toBe(true);
@@ -105,7 +111,7 @@ describe('密码强度检查', () => {
   test('常见密码模式应该被检测', () => {
     const commonPasswords = ['123456789', 'password123', 'qwerty123'];
 
-    commonPasswords.forEach(password => {
+    commonPasswords.forEach((password) => {
       const result = checkPasswordStrength(password);
       expect(result.feedback).toContain('避免使用常见密码模式');
     });
@@ -136,8 +142,8 @@ describe('注册表单验证', () => {
     const result = registerFormSchema.safeParse(invalidData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      const confirmPasswordError = result.error.errors.find(
-        err => err.path.includes('confirmPassword')
+      const confirmPasswordError = result.error.errors.find((err) =>
+        err.path.includes('confirmPassword')
       );
       expect(confirmPasswordError?.message).toBe('两次输入的密码不一致');
     }
@@ -256,7 +262,9 @@ export const createValidTestUser = () => ({
   confirmPassword: 'TestPassword123!',
 });
 
-export const createInvalidTestUser = (type: 'username' | 'email' | 'password') => {
+export const createInvalidTestUser = (
+  type: 'username' | 'email' | 'password'
+) => {
   const base = createValidTestUser();
 
   switch (type) {

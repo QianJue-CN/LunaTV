@@ -4,8 +4,10 @@
  */
 
 import { NextRequest } from 'next/server';
-import { POST, GET } from '@/app/api/register/route';
-import { createValidTestUser, createInvalidTestUser } from './validation.test';
+
+import { GET, POST } from '@/app/api/register/route';
+
+import { createInvalidTestUser, createValidTestUser } from './validation.test';
 
 // Mock环境变量
 const originalEnv = process.env;
@@ -49,7 +51,7 @@ describe('注册API - GET /api/register', () => {
 
   test('localStorage模式应该禁用注册', async () => {
     process.env.NEXT_PUBLIC_STORAGE_TYPE = 'localstorage';
-    
+
     const response = await GET();
     const data = await response.json();
 
@@ -68,7 +70,7 @@ describe('注册API - POST /api/register', () => {
 
   test('有效数据应该成功注册', async () => {
     const testUser = createValidTestUser();
-    
+
     // Mock数据库响应
     mockDb.checkUserExist.mockResolvedValue(false);
     mockDb.checkEmailExist.mockResolvedValue(false);
@@ -103,7 +105,7 @@ describe('注册API - POST /api/register', () => {
 
   test('localStorage模式应该拒绝注册', async () => {
     process.env.NEXT_PUBLIC_STORAGE_TYPE = 'localstorage';
-    
+
     const testUser = createValidTestUser();
     const request = new NextRequest('http://localhost/api/register', {
       method: 'POST',
@@ -122,7 +124,7 @@ describe('注册API - POST /api/register', () => {
 
   test('无效用户名应该被拒绝', async () => {
     const testUser = createInvalidTestUser('username');
-    
+
     const request = new NextRequest('http://localhost/api/register', {
       method: 'POST',
       body: JSON.stringify(testUser),
@@ -148,7 +150,7 @@ describe('注册API - POST /api/register', () => {
 
   test('无效邮箱应该被拒绝', async () => {
     const testUser = createInvalidTestUser('email');
-    
+
     const request = new NextRequest('http://localhost/api/register', {
       method: 'POST',
       body: JSON.stringify(testUser),
@@ -174,7 +176,7 @@ describe('注册API - POST /api/register', () => {
 
   test('弱密码应该被拒绝', async () => {
     const testUser = createInvalidTestUser('password');
-    
+
     const request = new NextRequest('http://localhost/api/register', {
       method: 'POST',
       body: JSON.stringify(testUser),
@@ -200,7 +202,7 @@ describe('注册API - POST /api/register', () => {
 
   test('已存在的用户名应该被拒绝', async () => {
     const testUser = createValidTestUser();
-    
+
     // Mock用户名已存在
     mockDb.checkUserExist.mockResolvedValue(true);
     mockDb.checkEmailExist.mockResolvedValue(false);
@@ -222,7 +224,7 @@ describe('注册API - POST /api/register', () => {
 
   test('已存在的邮箱应该被拒绝', async () => {
     const testUser = createValidTestUser();
-    
+
     // Mock邮箱已存在
     mockDb.checkUserExist.mockResolvedValue(false);
     mockDb.checkEmailExist.mockResolvedValue(true);
@@ -244,7 +246,7 @@ describe('注册API - POST /api/register', () => {
 
   test('数据库错误应该返回500', async () => {
     const testUser = createValidTestUser();
-    
+
     // Mock数据库错误
     mockDb.checkUserExist.mockResolvedValue(false);
     mockDb.checkEmailExist.mockResolvedValue(false);

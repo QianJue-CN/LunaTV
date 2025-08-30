@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { PlayRecord } from '@/lib/types';
 

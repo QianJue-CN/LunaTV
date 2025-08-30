@@ -18,13 +18,16 @@ export const emailSchema = z
   .string()
   .email('邮箱格式不正确')
   .max(100, '邮箱地址过长')
-  .refine((val) => {
-    // 检查邮箱域名是否合法
-    const domain = val.split('@')[1];
-    return domain && domain.includes('.') && domain.length >= 4;
-  }, {
-    message: '邮箱域名格式不正确',
-  });
+  .refine(
+    (val) => {
+      // 检查邮箱域名是否合法
+      const domain = val.split('@')[1];
+      return domain && domain.includes('.') && domain.length >= 4;
+    },
+    {
+      message: '邮箱域名格式不正确',
+    }
+  );
 
 // 密码验证规则
 export const passwordSchema = z
@@ -32,34 +35,39 @@ export const passwordSchema = z
   .min(8, '密码至少8个字符')
   .max(50, '密码最多50个字符')
   .regex(/^(?=.*[a-zA-Z])(?=.*\d)/, '密码必须包含字母和数字')
-  .refine((val) => {
-    // 检查密码强度
-    const hasLowerCase = /[a-z]/.test(val);
-    const hasUpperCase = /[A-Z]/.test(val);
-    const hasNumbers = /\d/.test(val);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(val);
-    
-    let strength = 0;
-    if (hasLowerCase) strength++;
-    if (hasUpperCase) strength++;
-    if (hasNumbers) strength++;
-    if (hasSpecialChar) strength++;
-    
-    return strength >= 2; // 至少包含2种类型的字符
-  }, {
-    message: '密码强度不足，建议包含大小写字母、数字或特殊字符',
-  });
+  .refine(
+    (val) => {
+      // 检查密码强度
+      const hasLowerCase = /[a-z]/.test(val);
+      const hasUpperCase = /[A-Z]/.test(val);
+      const hasNumbers = /\d/.test(val);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+
+      let strength = 0;
+      if (hasLowerCase) strength++;
+      if (hasUpperCase) strength++;
+      if (hasNumbers) strength++;
+      if (hasSpecialChar) strength++;
+
+      return strength >= 2; // 至少包含2种类型的字符
+    },
+    {
+      message: '密码强度不足，建议包含大小写字母、数字或特殊字符',
+    }
+  );
 
 // 完整的注册表单验证
-export const registerFormSchema = z.object({
-  username: usernameSchema,
-  email: emailSchema,
-  password: passwordSchema,
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: '两次输入的密码不一致',
-  path: ['confirmPassword'],
-});
+export const registerFormSchema = z
+  .object({
+    username: usernameSchema,
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: '两次输入的密码不一致',
+    path: ['confirmPassword'],
+  });
 
 // 登录表单验证
 export const loginFormSchema = z.object({
@@ -115,7 +123,7 @@ export function checkPasswordStrength(password: string): {
     /admin/i,
   ];
 
-  if (commonPatterns.some(pattern => pattern.test(password))) {
+  if (commonPatterns.some((pattern) => pattern.test(password))) {
     feedback.push('避免使用常见密码模式');
     score = Math.max(0, score - 2);
   }
@@ -167,10 +175,30 @@ export function validateUsername(username: string): {
 
   // 检查保留用户名
   const reservedNames = [
-    'admin', 'administrator', 'root', 'system', 'api', 'www',
-    'mail', 'email', 'support', 'help', 'info', 'contact',
-    'user', 'users', 'guest', 'public', 'private', 'test',
-    'demo', 'example', 'null', 'undefined', 'true', 'false',
+    'admin',
+    'administrator',
+    'root',
+    'system',
+    'api',
+    'www',
+    'mail',
+    'email',
+    'support',
+    'help',
+    'info',
+    'contact',
+    'user',
+    'users',
+    'guest',
+    'public',
+    'private',
+    'test',
+    'demo',
+    'example',
+    'null',
+    'undefined',
+    'true',
+    'false',
   ];
 
   if (reservedNames.includes(username.toLowerCase())) {
@@ -221,7 +249,7 @@ export interface ValidationError {
 }
 
 export function formatValidationErrors(error: z.ZodError): ValidationError[] {
-  return error.errors.map(err => ({
+  return error.errors.map((err) => ({
     field: err.path.join('.'),
     message: err.message,
   }));
@@ -252,7 +280,10 @@ export function validateSecurityRequirements(data: {
   // 检查密码是否包含个人信息
   const personalInfo = [data.username, emailLocal, data.email.split('@')[1]];
   for (const info of personalInfo) {
-    if (info.length >= 3 && data.password.toLowerCase().includes(info.toLowerCase())) {
+    if (
+      info.length >= 3 &&
+      data.password.toLowerCase().includes(info.toLowerCase())
+    ) {
       warnings.push('密码不应包含个人信息');
       break;
     }

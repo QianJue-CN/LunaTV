@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const nextConfig = {
-  output: 'standalone',
+  // 只在 Docker 环境中启用 standalone 输出
+  output: process.env.DOCKER_ENV === 'true' ? 'standalone' : undefined,
   eslint: {
     dirs: ['src'],
   },

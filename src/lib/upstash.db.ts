@@ -173,11 +173,18 @@ export class UpstashRedisStorage implements IStorage {
   }
 
   // 密码验证
-  private async verifyPassword(password: string, hash: string): Promise<boolean> {
+  private async verifyPassword(
+    password: string,
+    hash: string
+  ): Promise<boolean> {
     return bcrypt.compare(password, hash);
   }
 
-  async registerUser(userName: string, password: string, email: string): Promise<void> {
+  async registerUser(
+    userName: string,
+    password: string,
+    email: string
+  ): Promise<void> {
     // 检查用户名是否已存在
     if (await this.checkUserExist(userName)) {
       throw new Error('用户名已存在');
@@ -198,10 +205,16 @@ export class UpstashRedisStorage implements IStorage {
     };
 
     // 存储用户数据
-    await withRetry(() => this.client.set(this.userPwdKey(userName), hashedPassword));
+    await withRetry(() =>
+      this.client.set(this.userPwdKey(userName), hashedPassword)
+    );
     await withRetry(() => this.client.set(this.userEmailKey(userName), email));
-    await withRetry(() => this.client.set(this.userInfoKey(userName), JSON.stringify(userInfo)));
-    await withRetry(() => this.client.set(this.emailToUserKey(email), userName));
+    await withRetry(() =>
+      this.client.set(this.userInfoKey(userName), JSON.stringify(userInfo))
+    );
+    await withRetry(() =>
+      this.client.set(this.emailToUserKey(email), userName)
+    );
   }
 
   async verifyUser(userName: string, password: string): Promise<boolean> {
@@ -272,7 +285,9 @@ export class UpstashRedisStorage implements IStorage {
 
     // 删除邮箱到用户名的映射
     if (userInfo?.email) {
-      await withRetry(() => this.client.del(this.emailToUserKey(userInfo.email)));
+      await withRetry(() =>
+        this.client.del(this.emailToUserKey(userInfo.email))
+      );
     }
 
     // 删除搜索历史

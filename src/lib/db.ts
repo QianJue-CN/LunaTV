@@ -133,7 +133,11 @@ export class DbManager {
   }
 
   // ---------- 用户相关 ----------
-  async registerUser(userName: string, password: string, email: string): Promise<void> {
+  async registerUser(
+    userName: string,
+    password: string,
+    email: string
+  ): Promise<void> {
     await this.storage.registerUser(userName, password, email);
   }
 

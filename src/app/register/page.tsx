@@ -7,12 +7,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { CURRENT_VERSION } from '@/lib/version';
 import {
-  validateUsername,
+  checkPasswordStrength,
   validateEmail,
-  checkPasswordStrength
+  validateUsername,
 } from '@/lib/validation';
+import { CURRENT_VERSION } from '@/lib/version';
 import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 
 import { useSite } from '@/components/SiteProvider';
@@ -48,12 +48,13 @@ function VersionDisplay() {
       <span className='font-mono'>v{CURRENT_VERSION}</span>
       {!isChecking && updateStatus !== UpdateStatus.FETCH_FAILED && (
         <div
-          className={`flex items-center gap-1.5 ${updateStatus === UpdateStatus.HAS_UPDATE
-            ? 'text-yellow-600 dark:text-yellow-400'
-            : updateStatus === UpdateStatus.NO_UPDATE
+          className={`flex items-center gap-1.5 ${
+            updateStatus === UpdateStatus.HAS_UPDATE
+              ? 'text-yellow-600 dark:text-yellow-400'
+              : updateStatus === UpdateStatus.NO_UPDATE
               ? 'text-green-600 dark:text-green-400'
               : ''
-            }`}
+          }`}
         >
           {updateStatus === UpdateStatus.HAS_UPDATE && (
             <>
@@ -114,7 +115,9 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
-  const [registerConfig, setRegisterConfig] = useState<RegisterConfig | null>(null);
+  const [registerConfig, setRegisterConfig] = useState<RegisterConfig | null>(
+    null
+  );
   const [configLoading, setConfigLoading] = useState(true);
 
   const { siteName } = useSite();
@@ -279,7 +282,9 @@ export default function RegisterPage() {
         <h1 className='text-green-600 tracking-tight text-center text-3xl font-extrabold mb-2 bg-clip-text drop-shadow-sm'>
           {siteName}
         </h1>
-        <p className='text-center text-gray-600 dark:text-gray-400 mb-8'>创建新账户</p>
+        <p className='text-center text-gray-600 dark:text-gray-400 mb-8'>
+          创建新账户
+        </p>
 
         <form onSubmit={handleSubmit} className='space-y-6'>
           {/* 用户名 */}
@@ -291,10 +296,11 @@ export default function RegisterPage() {
               id='username'
               type='text'
               autoComplete='username'
-              className={`block w-full rounded-lg border-0 py-3 px-4 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ${errors.username
-                ? 'ring-red-500 focus:ring-red-500'
-                : 'ring-white/60 dark:ring-white/20 focus:ring-green-500'
-                } placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur`}
+              className={`block w-full rounded-lg border-0 py-3 px-4 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ${
+                errors.username
+                  ? 'ring-red-500 focus:ring-red-500'
+                  : 'ring-white/60 dark:ring-white/20 focus:ring-green-500'
+              } placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur`}
               placeholder='输入用户名'
               value={username}
               onChange={(e) => {
@@ -303,7 +309,9 @@ export default function RegisterPage() {
               }}
             />
             {errors.username && (
-              <p className='mt-1 text-sm text-red-600 dark:text-red-400'>{errors.username}</p>
+              <p className='mt-1 text-sm text-red-600 dark:text-red-400'>
+                {errors.username}
+              </p>
             )}
           </div>
 
@@ -316,10 +324,11 @@ export default function RegisterPage() {
               id='email'
               type='email'
               autoComplete='email'
-              className={`block w-full rounded-lg border-0 py-3 px-4 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ${errors.email
-                ? 'ring-red-500 focus:ring-red-500'
-                : 'ring-white/60 dark:ring-white/20 focus:ring-green-500'
-                } placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur`}
+              className={`block w-full rounded-lg border-0 py-3 px-4 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ${
+                errors.email
+                  ? 'ring-red-500 focus:ring-red-500'
+                  : 'ring-white/60 dark:ring-white/20 focus:ring-green-500'
+              } placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur`}
               placeholder='输入邮箱地址'
               value={email}
               onChange={(e) => {
@@ -328,7 +337,9 @@ export default function RegisterPage() {
               }}
             />
             {errors.email && (
-              <p className='mt-1 text-sm text-red-600 dark:text-red-400'>{errors.email}</p>
+              <p className='mt-1 text-sm text-red-600 dark:text-red-400'>
+                {errors.email}
+              </p>
             )}
           </div>
 
@@ -342,10 +353,11 @@ export default function RegisterPage() {
                 id='password'
                 type={showPassword ? 'text' : 'password'}
                 autoComplete='new-password'
-                className={`block w-full rounded-lg border-0 py-3 px-4 pr-12 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ${errors.password
-                  ? 'ring-red-500 focus:ring-red-500'
-                  : 'ring-white/60 dark:ring-white/20 focus:ring-green-500'
-                  } placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur`}
+                className={`block w-full rounded-lg border-0 py-3 px-4 pr-12 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ${
+                  errors.password
+                    ? 'ring-red-500 focus:ring-red-500'
+                    : 'ring-white/60 dark:ring-white/20 focus:ring-green-500'
+                } placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur`}
                 placeholder='输入密码'
                 value={password}
                 onChange={(e) => {
@@ -369,7 +381,9 @@ export default function RegisterPage() {
               </button>
             </div>
             {errors.password && (
-              <p className='mt-1 text-sm text-red-600 dark:text-red-400'>{errors.password}</p>
+              <p className='mt-1 text-sm text-red-600 dark:text-red-400'>
+                {errors.password}
+              </p>
             )}
           </div>
 
@@ -383,10 +397,11 @@ export default function RegisterPage() {
                 id='confirmPassword'
                 type={showConfirmPassword ? 'text' : 'password'}
                 autoComplete='new-password'
-                className={`block w-full rounded-lg border-0 py-3 px-4 pr-12 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ${errors.confirmPassword
-                  ? 'ring-red-500 focus:ring-red-500'
-                  : 'ring-white/60 dark:ring-white/20 focus:ring-green-500'
-                  } placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur`}
+                className={`block w-full rounded-lg border-0 py-3 px-4 pr-12 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ${
+                  errors.confirmPassword
+                    ? 'ring-red-500 focus:ring-red-500'
+                    : 'ring-white/60 dark:ring-white/20 focus:ring-green-500'
+                } placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:outline-none sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur`}
                 placeholder='再次输入密码'
                 value={confirmPassword}
                 onChange={(e) => {
@@ -407,20 +422,29 @@ export default function RegisterPage() {
               </button>
             </div>
             {errors.confirmPassword && (
-              <p className='mt-1 text-sm text-red-600 dark:text-red-400'>{errors.confirmPassword}</p>
+              <p className='mt-1 text-sm text-red-600 dark:text-red-400'>
+                {errors.confirmPassword}
+              </p>
             )}
           </div>
 
           {/* 通用错误信息 */}
           {errors.general && (
-            <p className='text-sm text-red-600 dark:text-red-400 text-center'>{errors.general}</p>
+            <p className='text-sm text-red-600 dark:text-red-400 text-center'>
+              {errors.general}
+            </p>
           )}
 
           {/* 注册按钮 */}
           <button
             type='submit'
             disabled={
-              !username || !email || !password || !confirmPassword || loading || Object.keys(errors).length > 0
+              !username ||
+              !email ||
+              !password ||
+              !confirmPassword ||
+              loading ||
+              Object.keys(errors).length > 0
             }
             className='inline-flex w-full justify-center rounded-lg bg-green-600 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:from-green-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50'
           >

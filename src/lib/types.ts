@@ -56,7 +56,11 @@ export interface IStorage {
   deleteFavorite(userName: string, key: string): Promise<void>;
 
   // 用户相关
-  registerUser(userName: string, password: string, email: string): Promise<void>;
+  registerUser(
+    userName: string,
+    password: string,
+    email: string
+  ): Promise<void>;
   verifyUser(userName: string, password: string): Promise<boolean>;
   // 检查用户是否存在（无需密码）
   checkUserExist(userName: string): Promise<boolean>;

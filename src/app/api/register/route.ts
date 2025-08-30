@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { clearConfigCache } from '@/lib/config';
 import { db } from '@/lib/db';
 import {
-  registerFormSchema,
   formatValidationErrors,
-  validateSecurityRequirements
+  registerFormSchema,
+  validateSecurityRequirements,
 } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -38,10 +38,7 @@ export async function POST(req: NextRequest) {
       body = await req.json();
     } catch (error) {
       console.error('JSON解析错误:', error);
-      return NextResponse.json(
-        { error: '请求数据格式错误' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '请求数据格式错误' }, { status: 400 });
     }
 
     // 验证输入数据
@@ -57,15 +54,19 @@ export async function POST(req: NextRequest) {
     const { username, email, password } = validationResult.data;
 
     // 安全性检查
-    const securityCheck = validateSecurityRequirements({ username, email, password });
+    const securityCheck = validateSecurityRequirements({
+      username,
+      email,
+      password,
+    });
     if (!securityCheck.isSecure) {
       return NextResponse.json(
         {
           error: '密码安全性不足',
-          details: securityCheck.warnings.map(warning => ({
+          details: securityCheck.warnings.map((warning) => ({
             field: 'password',
             message: warning,
-          }))
+          })),
         },
         { status: 400 }
       );
@@ -74,19 +75,13 @@ export async function POST(req: NextRequest) {
     // 检查用户名是否已存在
     const userExists = await db.checkUserExist(username);
     if (userExists) {
-      return NextResponse.json(
-        { error: '用户名已存在' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: '用户名已存在' }, { status: 409 });
     }
 
     // 检查邮箱是否已被使用
     const emailExists = await db.checkEmailExist(email);
     if (emailExists) {
-      return NextResponse.json(
-        { error: '邮箱已被使用' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: '邮箱已被使用' }, { status: 409 });
     }
 
     // 创建用户
@@ -115,10 +110,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error('注册接口异常:', error);
-    return NextResponse.json(
-      { error: '服务器错误' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '服务器错误' }, { status: 500 });
   }
 }
 
