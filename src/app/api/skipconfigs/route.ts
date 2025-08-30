@@ -6,7 +6,6 @@ import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { getAdminUsername } from '@/lib/env';
-import { getAdminUsername } from '@/lib/env';
 import { SkipConfig } from '@/lib/types';
 
 export const runtime = 'nodejs';
