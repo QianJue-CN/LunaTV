@@ -3,7 +3,7 @@
 import { AdminConfig } from './admin.types';
 import { KvrocksStorage } from './kvrocks.db';
 import { RedisStorage } from './redis.db';
-import { Favorite, IStorage, PlayRecord, SkipConfig } from './types';
+import { Favorite, IStorage, PlayRecord, SkipConfig, UserInfo } from './types';
 import { UpstashRedisStorage } from './upstash.db';
 
 // storage type 常量: 'localstorage' | 'redis' | 'upstash'，默认 'localstorage'
@@ -133,8 +133,8 @@ export class DbManager {
   }
 
   // ---------- 用户相关 ----------
-  async registerUser(userName: string, password: string): Promise<void> {
-    await this.storage.registerUser(userName, password);
+  async registerUser(userName: string, password: string, email: string): Promise<void> {
+    await this.storage.registerUser(userName, password, email);
   }
 
   async verifyUser(userName: string, password: string): Promise<boolean> {
@@ -146,12 +146,30 @@ export class DbManager {
     return this.storage.checkUserExist(userName);
   }
 
+  // 检查邮箱是否已被使用
+  async checkEmailExist(email: string): Promise<boolean> {
+    return this.storage.checkEmailExist(email);
+  }
+
   async changePassword(userName: string, newPassword: string): Promise<void> {
     await this.storage.changePassword(userName, newPassword);
   }
 
   async deleteUser(userName: string): Promise<void> {
     await this.storage.deleteUser(userName);
+  }
+
+  // ---------- 用户信息相关 ----------
+  async getUserInfo(userName: string): Promise<UserInfo | null> {
+    return this.storage.getUserInfo(userName);
+  }
+
+  async setUserInfo(userName: string, userInfo: UserInfo): Promise<void> {
+    await this.storage.setUserInfo(userName, userInfo);
+  }
+
+  async updateLastLogin(userName: string): Promise<void> {
+    await this.storage.updateLastLogin(userName);
   }
 
   // ---------- 搜索历史 ----------

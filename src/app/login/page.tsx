@@ -3,6 +3,7 @@
 'use client';
 
 import { AlertCircle, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
@@ -75,6 +76,8 @@ function LoginPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [shouldAskUsername, setShouldAskUsername] = useState(false);
+  const [showRegisterLink, setShowRegisterLink] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const { siteName } = useSite();
 
@@ -83,8 +86,17 @@ function LoginPageClient() {
     if (typeof window !== 'undefined') {
       const storageType = (window as any).RUNTIME_CONFIG?.STORAGE_TYPE;
       setShouldAskUsername(storageType && storageType !== 'localstorage');
+      setShowRegisterLink(storageType && storageType !== 'localstorage');
     }
-  }, []);
+
+    // 检查URL参数中的成功消息
+    const message = searchParams.get('message');
+    if (message) {
+      setSuccessMessage(message);
+      // 3秒后清除消息
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -163,6 +175,11 @@ function LoginPageClient() {
             />
           </div>
 
+          {/* 成功消息 */}
+          {successMessage && (
+            <p className='text-sm text-green-600 dark:text-green-400 text-center'>{successMessage}</p>
+          )}
+
           {error && (
             <p className='text-sm text-red-600 dark:text-red-400'>{error}</p>
           )}
@@ -177,6 +194,21 @@ function LoginPageClient() {
           >
             {loading ? '登录中...' : '登录'}
           </button>
+
+          {/* 注册链接 */}
+          {showRegisterLink && (
+            <div className='text-center'>
+              <p className='text-sm text-gray-600 dark:text-gray-400'>
+                还没有账户？{' '}
+                <Link
+                  href='/register'
+                  className='font-medium text-green-600 hover:text-green-500 transition-colors'
+                >
+                  立即注册
+                </Link>
+              </p>
+            </div>
+          )}
         </form>
       </div>
 

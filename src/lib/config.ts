@@ -231,6 +231,7 @@ async function getInitConfig(configFile: string, subConfig: {
   let userNames: string[] = [];
   try {
     userNames = await db.getAllUsers();
+    console.log(`[配置加载] 从数据库获取的用户列表: ${userNames.join(', ')}`);
   } catch (e) {
     console.error('获取用户列表失败:', e);
   }
@@ -244,6 +245,7 @@ async function getInitConfig(configFile: string, subConfig: {
     role: 'owner',
     banned: false,
   });
+  console.log(`[配置加载] 最终用户列表: ${allUsers.map(u => u.username).join(', ')}`);
   adminConfig.UserConfig.Users = allUsers as any;
 
   // 从配置文件中补充源信息
@@ -468,4 +470,9 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
 
 export async function setCachedConfig(config: AdminConfig) {
   cachedConfig = config;
+}
+
+// 清除配置缓存，强制下次重新从数据库加载
+export function clearConfigCache() {
+  cachedConfig = undefined as any;
 }

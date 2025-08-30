@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { clearConfigCache, getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -46,10 +46,12 @@ export async function POST(request: NextRequest) {
     const {
       targetUsername, // 目标用户名
       targetPassword, // 目标用户密码（仅在添加用户时需要）
+      targetEmail, // 目标用户邮箱（仅在添加用户时需要）
       action,
     } = body as {
       targetUsername?: string;
       targetPassword?: string;
+      targetEmail?: string;
       action?: (typeof ACTIONS)[number];
     };
 
@@ -126,7 +128,16 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        await db.registerUser(targetUsername!, targetPassword);
+        if (!targetEmail) {
+          return NextResponse.json(
+            { error: '缺少目标用户邮箱' },
+            { status: 400 }
+          );
+        }
+        await db.registerUser(targetUsername!, targetPassword, targetEmail);
+
+        // 清除配置缓存，确保新用户出现在用户列表中
+        clearConfigCache();
 
         // 获取用户组信息
         const { userGroup } = body as { userGroup?: string };
@@ -287,6 +298,9 @@ export async function POST(request: NextRequest) {
         }
 
         await db.deleteUser(targetUsername!);
+
+        // 清除配置缓存，确保用户从列表中移除
+        clearConfigCache();
 
         // 从配置中移除用户
         const userIndex = adminConfig.UserConfig.Users.findIndex(

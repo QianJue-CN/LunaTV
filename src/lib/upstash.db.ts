@@ -1,9 +1,10 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 import { Redis } from '@upstash/redis';
+import * as bcrypt from 'bcrypt';
 
 import { AdminConfig } from './admin.types';
-import { Favorite, IStorage, PlayRecord, SkipConfig } from './types';
+import { Favorite, IStorage, PlayRecord, SkipConfig, UserInfo } from './types';
 
 // 搜索历史最大条数
 const SEARCH_HISTORY_LIMIT = 20;
@@ -153,9 +154,54 @@ export class UpstashRedisStorage implements IStorage {
     return `u:${user}:pwd`;
   }
 
-  async registerUser(userName: string, password: string): Promise<void> {
-    // 简单存储明文密码，生产环境应加密
-    await withRetry(() => this.client.set(this.userPwdKey(userName), password));
+  private userEmailKey(user: string) {
+    return `u:${user}:email`;
+  }
+
+  private userInfoKey(user: string) {
+    return `u:${user}:info`;
+  }
+
+  private emailToUserKey(email: string) {
+    return `email:${email}:user`;
+  }
+
+  // 密码加密
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = 12;
+    return bcrypt.hash(password, saltRounds);
+  }
+
+  // 密码验证
+  private async verifyPassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash);
+  }
+
+  async registerUser(userName: string, password: string, email: string): Promise<void> {
+    // 检查用户名是否已存在
+    if (await this.checkUserExist(userName)) {
+      throw new Error('用户名已存在');
+    }
+
+    // 检查邮箱是否已被使用
+    if (await this.checkEmailExist(email)) {
+      throw new Error('邮箱已被使用');
+    }
+
+    // 加密密码
+    const hashedPassword = await this.hashPassword(password);
+
+    // 创建用户信息
+    const userInfo: UserInfo = {
+      email,
+      createdAt: Date.now(),
+    };
+
+    // 存储用户数据
+    await withRetry(() => this.client.set(this.userPwdKey(userName), hashedPassword));
+    await withRetry(() => this.client.set(this.userEmailKey(userName), email));
+    await withRetry(() => this.client.set(this.userInfoKey(userName), JSON.stringify(userInfo)));
+    await withRetry(() => this.client.set(this.emailToUserKey(email), userName));
   }
 
   async verifyUser(userName: string, password: string): Promise<boolean> {
@@ -163,8 +209,25 @@ export class UpstashRedisStorage implements IStorage {
       this.client.get(this.userPwdKey(userName))
     );
     if (stored === null) return false;
-    // 确保比较时都是字符串类型
-    return ensureString(stored) === password;
+
+    const storedPassword = ensureString(stored);
+
+    // 检查是否是旧的明文密码（向后兼容）
+    if (!storedPassword.startsWith('$2b$')) {
+      // 明文密码比较
+      if (storedPassword === password) {
+        // 自动升级为加密密码
+        const hashedPassword = await this.hashPassword(password);
+        await withRetry(() =>
+          this.client.set(this.userPwdKey(userName), hashedPassword)
+        );
+        return true;
+      }
+      return false;
+    }
+
+    // 加密密码验证
+    return this.verifyPassword(password, storedPassword);
   }
 
   // 检查用户是否存在
@@ -176,18 +239,41 @@ export class UpstashRedisStorage implements IStorage {
     return exists === 1;
   }
 
+  // 检查邮箱是否已被使用
+  async checkEmailExist(email: string): Promise<boolean> {
+    const exists = await withRetry(() =>
+      this.client.exists(this.emailToUserKey(email))
+    );
+    return exists === 1;
+  }
+
   // 修改用户密码
   async changePassword(userName: string, newPassword: string): Promise<void> {
-    // 简单存储明文密码，生产环境应加密
+    // 加密新密码
+    const hashedPassword = await this.hashPassword(newPassword);
     await withRetry(() =>
-      this.client.set(this.userPwdKey(userName), newPassword)
+      this.client.set(this.userPwdKey(userName), hashedPassword)
     );
   }
 
   // 删除用户及其所有数据
   async deleteUser(userName: string): Promise<void> {
+    // 获取用户邮箱以删除邮箱映射
+    const userInfo = await this.getUserInfo(userName);
+
     // 删除用户密码
     await withRetry(() => this.client.del(this.userPwdKey(userName)));
+
+    // 删除用户邮箱
+    await withRetry(() => this.client.del(this.userEmailKey(userName)));
+
+    // 删除用户信息
+    await withRetry(() => this.client.del(this.userInfoKey(userName)));
+
+    // 删除邮箱到用户名的映射
+    if (userInfo?.email) {
+      await withRetry(() => this.client.del(this.emailToUserKey(userInfo.email)));
+    }
 
     // 删除搜索历史
     await withRetry(() => this.client.del(this.shKey(userName)));
@@ -217,6 +303,34 @@ export class UpstashRedisStorage implements IStorage {
     );
     if (skipConfigKeys.length > 0) {
       await withRetry(() => this.client.del(...skipConfigKeys));
+    }
+  }
+
+  // ---------- 用户信息相关 ----------
+  async getUserInfo(userName: string): Promise<UserInfo | null> {
+    const info = await withRetry(() =>
+      this.client.get(this.userInfoKey(userName))
+    );
+    if (!info) return null;
+
+    try {
+      return JSON.parse(ensureString(info)) as UserInfo;
+    } catch {
+      return null;
+    }
+  }
+
+  async setUserInfo(userName: string, userInfo: UserInfo): Promise<void> {
+    await withRetry(() =>
+      this.client.set(this.userInfoKey(userName), JSON.stringify(userInfo))
+    );
+  }
+
+  async updateLastLogin(userName: string): Promise<void> {
+    const userInfo = await this.getUserInfo(userName);
+    if (userInfo) {
+      userInfo.lastLoginAt = Date.now();
+      await this.setUserInfo(userName, userInfo);
     }
   }
 

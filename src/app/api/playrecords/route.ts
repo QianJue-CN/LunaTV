@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { clearConfigCache, getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { PlayRecord } from '@/lib/types';
 
@@ -17,16 +17,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const config = await getConfig();
-    if (authInfo.username !== process.env.ADMIN_USERNAME) {
-      // 非站长，检查用户存在或被封禁
+    if (authInfo.username !== process.env.USERNAME) {
+      // 非站长，直接从数据库验证用户是否存在
+      const userExists = await db.checkUserExist(authInfo.username);
+
+      if (!userExists) {
+        return NextResponse.json({ error: '用户不存在' }, { status: 401 });
+      }
+
+      // 检查用户是否被封禁（从配置中查找）
+      const config = await getConfig();
       const user = config.UserConfig.Users.find(
         (u) => u.username === authInfo.username
       );
-      if (!user) {
-        return NextResponse.json({ error: '用户不存在' }, { status: 401 });
-      }
-      if (user.banned) {
+      if (user && user.banned) {
         return NextResponse.json({ error: '用户已被封禁' }, { status: 401 });
       }
     }
@@ -50,16 +54,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const config = await getConfig();
-    if (authInfo.username !== process.env.ADMIN_USERNAME) {
-      // 非站长，检查用户存在或被封禁
+    if (authInfo.username !== process.env.USERNAME) {
+      // 非站长，直接从数据库验证用户是否存在
+      const userExists = await db.checkUserExist(authInfo.username);
+      if (!userExists) {
+        return NextResponse.json({ error: '用户不存在' }, { status: 401 });
+      }
+
+      // 检查用户是否被封禁（从配置中查找）
+      const config = await getConfig();
       const user = config.UserConfig.Users.find(
         (u) => u.username === authInfo.username
       );
-      if (!user) {
-        return NextResponse.json({ error: '用户不存在' }, { status: 401 });
-      }
-      if (user.banned) {
+      if (user && user.banned) {
         return NextResponse.json({ error: '用户已被封禁' }, { status: 401 });
       }
     }
@@ -116,16 +123,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const config = await getConfig();
-    if (authInfo.username !== process.env.ADMIN_USERNAME) {
-      // 非站长，检查用户存在或被封禁
+    if (authInfo.username !== process.env.USERNAME) {
+      // 非站长，直接从数据库验证用户是否存在
+      const userExists = await db.checkUserExist(authInfo.username);
+      if (!userExists) {
+        return NextResponse.json({ error: '用户不存在' }, { status: 401 });
+      }
+
+      // 检查用户是否被封禁（从配置中查找）
+      const config = await getConfig();
       const user = config.UserConfig.Users.find(
         (u) => u.username === authInfo.username
       );
-      if (!user) {
-        return NextResponse.json({ error: '用户不存在' }, { status: 401 });
-      }
-      if (user.banned) {
+      if (user && user.banned) {
         return NextResponse.json({ error: '用户已被封禁' }, { status: 401 });
       }
     }
