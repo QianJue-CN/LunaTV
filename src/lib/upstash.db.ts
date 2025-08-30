@@ -1,7 +1,7 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 import { Redis } from '@upstash/redis';
-import * as bcrypt from 'bcrypt';
+import { pbkdf2, randomBytes, timingSafeEqual } from 'crypto';
 
 import { AdminConfig } from './admin.types';
 import { Favorite, IStorage, PlayRecord, SkipConfig, UserInfo } from './types';
@@ -166,10 +166,18 @@ export class UpstashRedisStorage implements IStorage {
     return `email:${email}:user`;
   }
 
-  // 密码加密
+  // 密码加密 - 使用 PBKDF2 替代 bcrypt
   private async hashPassword(password: string): Promise<string> {
-    const saltRounds = 12;
-    return bcrypt.hash(password, saltRounds);
+    const salt = randomBytes(32).toString('hex');
+    const iterations = 100000; // PBKDF2 迭代次数
+    const keyLength = 64;
+
+    return new Promise((resolve, reject) => {
+      pbkdf2(password, salt, iterations, keyLength, 'sha512', (err: any, derivedKey: Buffer) => {
+        if (err) reject(err);
+        else resolve(`pbkdf2$${iterations}$${salt}$${derivedKey.toString('hex')}`);
+      });
+    });
   }
 
   // 密码验证
@@ -177,7 +185,30 @@ export class UpstashRedisStorage implements IStorage {
     password: string,
     hash: string
   ): Promise<boolean> {
-    return bcrypt.compare(password, hash);
+    // 支持新的 PBKDF2 格式
+    if (hash.startsWith('pbkdf2$')) {
+      const [, iterations, salt, key] = hash.split('$');
+      const keyLength = key.length / 2; // hex 字符串长度是字节数的两倍
+
+      return new Promise((resolve, reject) => {
+        pbkdf2(password, salt, parseInt(iterations), keyLength, 'sha512', (err: any, derivedKey: Buffer) => {
+          if (err) reject(err);
+          else {
+            const expectedKey = Buffer.from(key, 'hex');
+            resolve(timingSafeEqual(derivedKey, expectedKey));
+          }
+        });
+      });
+    }
+
+    // 向后兼容 bcrypt 格式（如果存在）
+    if (hash.startsWith('$2b$')) {
+      console.warn('检测到旧的 bcrypt 密码格式，但 bcrypt 已被移除。请重新设置密码。');
+      return false;
+    }
+
+    // 明文密码比较（最后的兼容性选项）
+    return hash === password;
   }
 
   async registerUser(
@@ -225,22 +256,23 @@ export class UpstashRedisStorage implements IStorage {
 
     const storedPassword = ensureString(stored);
 
-    // 检查是否是旧的明文密码（向后兼容）
-    if (!storedPassword.startsWith('$2b$')) {
-      // 明文密码比较
-      if (storedPassword === password) {
-        // 自动升级为加密密码
+    // 验证密码并自动升级旧格式
+    const isValid = await this.verifyPassword(password, storedPassword);
+
+    // 如果密码正确且不是新格式，自动升级
+    if (isValid && !storedPassword.startsWith('pbkdf2$')) {
+      try {
         const hashedPassword = await this.hashPassword(password);
         await withRetry(() =>
           this.client.set(this.userPwdKey(userName), hashedPassword)
         );
-        return true;
+        console.log(`用户 ${userName} 的密码已自动升级为新格式`);
+      } catch (error) {
+        console.warn(`用户 ${userName} 密码升级失败:`, error);
       }
-      return false;
     }
 
-    // 加密密码验证
-    return this.verifyPassword(password, storedPassword);
+    return isValid;
   }
 
   // 检查用户是否存在
