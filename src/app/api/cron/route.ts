@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig, refineConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { getAdminUsername } from '@/lib/env';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
@@ -117,8 +118,9 @@ async function refreshConfig() {
 async function refreshRecordAndFavorites() {
   try {
     const users = await db.getAllUsers();
-    if (process.env.USERNAME && !users.includes(process.env.USERNAME)) {
-      users.push(process.env.USERNAME);
+    const adminUsername = getAdminUsername();
+    if (adminUsername && !users.includes(adminUsername)) {
+      users.push(adminUsername);
     }
     // 函数级缓存：key 为 `${source}+${id}`，值为 Promise<VideoDetail | null>
     const detailCache = new Map<string, Promise<SearchResult | null>>();

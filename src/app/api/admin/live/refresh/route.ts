@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getConfig } from '@/lib/config';
+import { getAdminUsername } from '@/lib/env';
 import { db } from '@/lib/db';
 import { refreshLiveChannels } from '@/lib/live';
 
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     const authInfo = getAuthInfoFromCookie(request);
     const username = authInfo?.username;
     const config = await getConfig();
-    if (username !== process.env.USERNAME) {
+    if (username !== getAdminUsername()) {
       // 管理员
       const user = config.UserConfig.Users.find((u) => u.username === username);
       if (!user || user.role !== 'admin' || user.banned) {

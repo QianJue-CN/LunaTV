@@ -42,7 +42,7 @@ export class PostgresStorage implements IStorage {
       ssl: config.ssl ? { rejectUnauthorized: false } : false,
       max: 20, // 最大连接数
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 360000,
     });
 
     this.pool.on('error', (err) => {

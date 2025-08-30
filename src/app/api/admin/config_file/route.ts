@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getConfig, refineConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { getAdminUsername } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     let adminConfig = await getConfig();
 
     // 仅站长可以修改配置文件
-    if (username !== process.env.USERNAME) {
+    if (username !== getAdminUsername()) {
       return NextResponse.json(
         { error: '权限不足，只有站长可以修改配置文件' },
         { status: 401 }

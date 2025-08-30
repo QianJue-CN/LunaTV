@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { getAdminUsername } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (authInfo.username !== process.env.USERNAME) {
+    if (authInfo.username !== getAdminUsername()) {
       // 非站长，直接从数据库验证用户是否存在
       const userExists = await db.checkUserExist(authInfo.username);
       if (!userExists) {
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (authInfo.username !== process.env.USERNAME) {
+    if (authInfo.username !== getAdminUsername()) {
       // 非站长，直接从数据库验证用户是否存在
       const userExists = await db.checkUserExist(authInfo.username);
       if (!userExists) {
@@ -118,7 +119,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (authInfo.username !== process.env.USERNAME) {
+    if (authInfo.username !== getAdminUsername()) {
       // 非站长，直接从数据库验证用户是否存在
       const userExists = await db.checkUserExist(authInfo.username);
       if (!userExists) {

@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { clearConfigCache, getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { getAdminUsername } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     // 判定操作者角色
     let operatorRole: 'owner' | 'admin';
-    if (username === process.env.USERNAME) {
+    if (username === getAdminUsername()) {
       operatorRole = 'owner';
     } else {
       const userEntry = adminConfig.UserConfig.Users.find(
@@ -418,8 +419,7 @@ export async function POST(request: NextRequest) {
 
             // 记录删除操作的影响
             console.log(
-              `删除用户组 "${groupName}"，影响用户: ${
-                affectedUsers.length > 0 ? affectedUsers.join(', ') : '无'
+              `删除用户组 "${groupName}"，影响用户: ${affectedUsers.length > 0 ? affectedUsers.join(', ') : '无'
               }`
             );
 
