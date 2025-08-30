@@ -83,7 +83,7 @@ LunaTV 支持多种存储方案，可根据需求选择：
 ```yml
 services:
   moontv-core:
-    image: ghcr.io/moontechlab/lunatv:latest
+    image: ghcr.io/qianjue-cn/lunatv:latest
     container_name: moontv-core
     restart: on-failure
     ports:
@@ -139,7 +139,7 @@ volumes:
 ```yml
 services:
   moontv-core:
-    image: ghcr.io/moontechlab/lunatv:latest
+    image: ghcr.io/qianjue-cn/lunatv:latest
     container_name: moontv-core
     restart: on-failure
     ports:
@@ -180,7 +180,7 @@ volumes:
 ```yml
 services:
   moontv-core:
-    image: ghcr.io/moontechlab/lunatv:latest
+    image: ghcr.io/qianjue-cn/lunatv:latest
     container_name: moontv-core
     restart: on-failure
     ports:
@@ -214,7 +214,7 @@ volumes:
 ```yml
 services:
   moontv-core:
-    image: ghcr.io/moontechlab/lunatv:latest
+    image: ghcr.io/qianjue-cn/lunatv:latest
     container_name: moontv-core
     restart: on-failure
     ports:
@@ -251,7 +251,7 @@ networks:
 ```yml
 services:
   moontv-core:
-    image: ghcr.io/moontechlab/lunatv:latest
+    image: ghcr.io/qianjue-cn/lunatv:latest
     container_name: moontv-core
     restart: on-failure
     ports:
